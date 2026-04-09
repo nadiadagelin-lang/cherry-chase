@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cherry Chase</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="page-shell">
+    <header class="title-block">
+      <p class="eyebrow">Mini Arcade</p>
+      <h1>Cherry Chase</h1>
+      <p class="subtitle">Battle through six harder mazes, grab the big cherries, and climb the leaderboard.</p>
+    </header>
+
+    <section class="game-shell" aria-label="Cherry Chase game">
+      <div class="hud">
+        <div class="hud-card">
+          <span class="hud-label">Score</span>
+          <strong id="score">0</strong>
+        </div>
+        <div class="hud-card">
+          <span class="hud-label">Level</span>
+          <strong id="level">1 / 6</strong>
+          <span id="level-name">Velvet Hall</span>
+        </div>
+        <div class="hud-card">
+          <span class="hud-label">Power</span>
+          <strong id="power-status">Ready</strong>
+          <span id="power-detail">Big cherries flip the chase.</span>
+        </div>
+        <div class="hud-card controls-card">
+          <span class="hud-label">Controls</span>
+          <strong>Move: Arrows / WASD</strong>
+          <span>Big cherries let you eat blue chasers</span>
+          <span>Start, next level, or restart: Enter / Space</span>
+        </div>
+      </div>
+
+      <div class="canvas-frame">
+        <canvas id="game" width="608" height="480" aria-label="Cherry Chase playfield"></canvas>
+        <div class="overlay" id="overlay" aria-live="polite">
+          <div class="overlay-panel">
+            <p class="overlay-kicker" id="overlay-kicker">6-Level Run</p>
+            <h2 id="overlay-title">Cherry Chase</h2>
+            <p id="overlay-message">Collect every cherry, grab the big ones, hunt both chasers, and chase the highest score.</p>
+            <p class="overlay-hint">Press Enter or Space to begin</p>
+          </div>
+        </div>
+      </div>
+
+      <section class="leaderboard-card" aria-label="Leaderboard">
+        <div class="leaderboard-header">
+          <div>
+            <span class="hud-label">Leaderboard</span>
+            <strong>Top Cherry Hunters</strong>
+          </div>
+          <span class="leaderboard-note" id="leaderboard-note">Local mode</span>
+        </div>
+
+        <label class="name-field" for="player-name">
+          <span>Your name</span>
+          <input id="player-name" name="player-name" type="text" maxlength="10" placeholder="Add your name before you play">
+        </label>
+
+        <p class="leaderboard-help" id="leaderboard-help">Enter your name before you start so your score can be saved.</p>
+        <ol class="leaderboard-list" id="leaderboard-list"></ol>
+      </section>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="game-power.js"></script>
+</body>
+</html>

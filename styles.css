@@ -1,0 +1,359 @@
+:root {
+  --bg-top: #14040a;
+  --bg-bottom: #050106;
+  --panel: rgba(40, 9, 17, 0.82);
+  --panel-border: rgba(255, 151, 178, 0.2);
+  --text-main: #fff2f4;
+  --text-soft: #f5cfd6;
+  --accent: #ff3b5d;
+  --accent-soft: #ff7a90;
+  --highlight: #ffe172;
+  --shadow: rgba(255, 59, 93, 0.28);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  color: var(--text-main);
+  background:
+    radial-gradient(circle at top, rgba(255, 79, 111, 0.12), transparent 30%),
+    linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: auto;
+  width: 16rem;
+  height: 16rem;
+  border-radius: 999px;
+  filter: blur(72px);
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+body::before {
+  top: -3rem;
+  left: -4rem;
+  background: rgba(255, 59, 93, 0.22);
+}
+
+body::after {
+  right: -3rem;
+  bottom: -5rem;
+  background: rgba(255, 191, 105, 0.14);
+}
+
+.page-shell {
+  min-height: 100vh;
+  padding: 2rem 1rem 3rem;
+  display: grid;
+  place-items: center;
+  gap: 1.5rem;
+}
+
+.title-block {
+  text-align: center;
+  max-width: 36rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  color: var(--accent-soft);
+}
+
+.title-block h1 {
+  margin: 0;
+  font-size: clamp(2.6rem, 7vw, 4.4rem);
+  line-height: 0.95;
+  text-shadow: 0 0 18px rgba(255, 59, 93, 0.25);
+}
+
+.subtitle {
+  margin: 0.85rem auto 0;
+  max-width: 28rem;
+  color: var(--text-soft);
+  font-size: 1rem;
+}
+
+.game-shell {
+  width: min(100%, 760px);
+  display: grid;
+  gap: 1rem;
+}
+
+.hud {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.9rem;
+}
+
+.hud-card {
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  background: var(--panel);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+}
+
+.hud-card strong,
+.hud-card span {
+  display: block;
+}
+
+.hud-label {
+  margin-bottom: 0.35rem;
+  color: var(--accent-soft);
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.hud-card strong {
+  font-size: 1.35rem;
+}
+
+.controls-card span:not(.hud-label) {
+  margin-top: 0.2rem;
+  color: var(--text-soft);
+  font-size: 0.95rem;
+}
+
+#level-name,
+#power-detail {
+  margin-top: 0.2rem;
+  color: var(--text-soft);
+  font-size: 0.95rem;
+}
+
+.canvas-frame {
+  position: relative;
+  padding: 0.9rem;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 151, 178, 0.24);
+  background:
+    linear-gradient(180deg, rgba(46, 9, 18, 0.96), rgba(20, 4, 10, 0.96));
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 151, 178, 0.06) inset;
+}
+
+.leaderboard-card {
+  padding: 1.1rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 24px;
+  background: var(--panel);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+}
+
+.leaderboard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.leaderboard-header strong {
+  display: block;
+  font-size: 1.25rem;
+}
+
+.leaderboard-note {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  text-align: right;
+}
+
+.name-field {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 1rem;
+}
+
+.name-field span {
+  color: var(--text-soft);
+  font-size: 0.95rem;
+}
+
+.name-field input {
+  width: 100%;
+  border: 1px solid rgba(255, 151, 178, 0.22);
+  border-radius: 14px;
+  background: rgba(11, 2, 7, 0.8);
+  color: var(--text-main);
+  padding: 0.8rem 0.95rem;
+  font: inherit;
+  outline: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.name-field input:focus {
+  border-color: rgba(255, 122, 144, 0.9);
+  box-shadow: 0 0 0 3px rgba(255, 59, 93, 0.16);
+}
+
+.leaderboard-help {
+  margin: 0.8rem 0 0;
+  color: var(--text-soft);
+  font-size: 0.92rem;
+}
+
+.leaderboard-list {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.leaderboard-entry {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.8rem 0.9rem;
+  border-radius: 16px;
+  background: rgba(14, 3, 8, 0.72);
+  border: 1px solid rgba(255, 151, 178, 0.12);
+}
+
+.leaderboard-rank {
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 59, 93, 0.16);
+  color: var(--highlight);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.leaderboard-name {
+  font-weight: 700;
+}
+
+.leaderboard-meta {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--text-soft);
+  font-size: 0.86rem;
+}
+
+.leaderboard-score {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--highlight);
+}
+
+.leaderboard-empty {
+  padding: 1rem;
+  border-radius: 16px;
+  background: rgba(14, 3, 8, 0.72);
+  color: var(--text-soft);
+  text-align: center;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  max-width: 608px;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 18px;
+  background: #09030a;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 0 28px var(--shadow);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0.9rem;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: rgba(8, 2, 8, 0.72);
+  opacity: 1;
+  transition: opacity 160ms ease;
+}
+
+.overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.overlay-panel {
+  width: min(100% - 2rem, 24rem);
+  padding: 1.5rem;
+  text-align: center;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 151, 178, 0.24);
+  background: rgba(31, 7, 15, 0.92);
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.35),
+    0 0 36px rgba(255, 59, 93, 0.14);
+}
+
+.overlay-kicker {
+  margin: 0 0 0.45rem;
+  color: var(--accent-soft);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+
+.overlay-panel h2 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.overlay-panel p {
+  margin: 0.6rem 0 0;
+  color: var(--text-soft);
+}
+
+.overlay-hint {
+  color: var(--highlight);
+}
+
+@media (max-width: 700px) {
+  .page-shell {
+    padding-inline: 0.75rem;
+  }
+
+  .hud-card strong {
+    font-size: 1.15rem;
+  }
+
+  .leaderboard-header {
+    flex-direction: column;
+  }
+
+  .leaderboard-note {
+    text-align: left;
+  }
+
+  .leaderboard-entry {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .leaderboard-score {
+    grid-column: 2;
+  }
+}
