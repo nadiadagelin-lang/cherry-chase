@@ -14,6 +14,9 @@ const playerNameInput = document.getElementById("player-name");
 const leaderboardList = document.getElementById("leaderboard-list");
 const leaderboardHelp = document.getElementById("leaderboard-help");
 const leaderboardNote = document.getElementById("leaderboard-note");
+const touchControls = document.getElementById("touch-controls");
+const touchActionButton = document.getElementById("touch-action");
+const touchMoveButtons = Array.from(document.querySelectorAll(".touch-button[data-direction]"));
 
 const TILE_SIZE = 32;
 const PLAYER_SPEED = 178;
@@ -35,6 +38,7 @@ const SHARED_SCOREBOARD_ENABLED =
   typeof SCOREBOARD_CONFIG.anonKey === "string" &&
   SCOREBOARD_CONFIG.anonKey.trim();
 const SCOREBOARD_TABLE = SCOREBOARD_CONFIG.table || "cherry_chase_scores";
+const coarsePointerQuery = window.matchMedia("(pointer: coarse)");
 
 const LEVELS = [
   {
@@ -343,14 +347,75 @@ function showOverlay(kicker, title, message, hint) {
   overlayMessage.textContent = message;
   overlayHint.textContent = hint;
   overlay.classList.remove("hidden");
+  updateTouchActionButton();
 }
 
 function hideOverlay() {
   overlay.classList.add("hidden");
+  updateTouchActionButton();
 }
 
 function updateLeaderboardModeUi() {
   leaderboardNote.textContent = SHARED_SCOREBOARD_ENABLED ? "Shared online" : "Local until configured";
+}
+
+function isTouchMode() {
+  return coarsePointerQuery.matches || navigator.maxTouchPoints > 0;
+}
+
+function updateTouchModeUi() {
+  const touchMode = isTouchMode();
+  document.body.classList.toggle("touch-mode", touchMode);
+  touchControls.hidden = !touchMode;
+}
+
+function updateTouchActionButton() {
+  if (game.state === "playing") {
+    touchActionButton.textContent = "Play";
+    touchActionButton.disabled = true;
+    return;
+  }
+
+  touchActionButton.disabled = false;
+
+  if (game.state === "level-clear") {
+    touchActionButton.textContent = "Next";
+  } else if (game.state === "lost" || game.state === "finished") {
+    touchActionButton.textContent = "Restart";
+  } else {
+    touchActionButton.textContent = "Start";
+  }
+}
+
+function queueDirectionByName(directionName) {
+  const direction = DIRECTIONS[directionName];
+  if (!direction) {
+    return;
+  }
+
+  game.queuedDirection = direction;
+}
+
+function advanceGameState() {
+  if (game.state === "start" || game.state === "lost" || game.state === "finished") {
+    startNewGame();
+    return true;
+  }
+
+  if (game.state === "level-clear") {
+    startNextLevel();
+    return true;
+  }
+
+  return game.state === "playing";
+}
+
+function handleTouchDirection(directionName) {
+  if (game.state !== "playing" && !advanceGameState()) {
+    return;
+  }
+
+  queueDirectionByName(directionName);
 }
 
 function getPlayerName() {
@@ -1143,11 +1208,7 @@ document.addEventListener("keydown", (event) => {
   }
 
   if (event.key === " " || event.key === "Enter") {
-    if (game.state === "start" || game.state === "lost" || game.state === "finished") {
-      startNewGame();
-    } else if (game.state === "level-clear") {
-      startNextLevel();
-    }
+    advanceGameState();
     return;
   }
 
@@ -1156,7 +1217,23 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
-  game.queuedDirection = direction;
+  queueDirectionByName(direction.name);
+});
+
+overlay.addEventListener("click", () => {
+  if (game.state !== "playing") {
+    advanceGameState();
+  }
+});
+
+touchActionButton.addEventListener("click", () => {
+  advanceGameState();
+});
+
+touchMoveButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    handleTouchDirection(button.dataset.direction);
+  });
 });
 
 playerNameInput.addEventListener("input", () => {
@@ -1171,6 +1248,8 @@ playerNameInput.addEventListener("input", () => {
 
 restorePlayerName();
 updateLeaderboardModeUi();
+updateTouchModeUi();
+updateTouchActionButton();
 refreshLeaderboard();
 if (getPlayerName()) {
   setLeaderboardHelp(`Ready for ${getPlayerName()}. Finish a run to save your score.`);
@@ -1187,4 +1266,5 @@ showOverlay(
   "Enter your name, eat the big cherries, and push through all six mazes for the top score.",
   "Press Enter or Space to begin"
 );
+coarsePointerQuery.addEventListener?.("change", updateTouchModeUi);
 window.requestAnimationFrame(frame);

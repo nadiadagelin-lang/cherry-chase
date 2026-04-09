@@ -33,8 +33,8 @@
         <div class="hud-card controls-card">
           <span class="hud-label">Controls</span>
           <strong>Move: Arrows / WASD</strong>
-          <span>Big cherries let you eat blue chasers</span>
-          <span>Start, next level, or restart: Enter / Space</span>
+          <span>On phones, touch arrows appear automatically</span>
+          <span>Start, next level, or restart: Enter / Space or touch start</span>
         </div>
       </div>
 
@@ -49,6 +49,21 @@
           </div>
         </div>
       </div>
+
+      <section class="touch-controls" id="touch-controls" aria-label="Touch controls" hidden>
+        <p class="touch-controls-copy">Phone mode: tap an arrow to move.</p>
+        <div class="touch-pad">
+          <span class="touch-pad-gap" aria-hidden="true"></span>
+          <button class="touch-button" type="button" data-direction="up" aria-label="Move up">↑</button>
+          <span class="touch-pad-gap" aria-hidden="true"></span>
+          <button class="touch-button" type="button" data-direction="left" aria-label="Move left">←</button>
+          <button class="touch-button touch-button--action" id="touch-action" type="button">Start</button>
+          <button class="touch-button" type="button" data-direction="right" aria-label="Move right">→</button>
+          <span class="touch-pad-gap" aria-hidden="true"></span>
+          <button class="touch-button" type="button" data-direction="down" aria-label="Move down">↓</button>
+          <span class="touch-pad-gap" aria-hidden="true"></span>
+        </div>
+      </section>
 
       <section class="leaderboard-card" aria-label="Leaderboard">
         <div class="leaderboard-header">
