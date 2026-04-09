@@ -279,21 +279,31 @@ const game = {
 };
 
 let audioContext = null;
+let audioUnlockPromise = null;
 
 function unlockAudio() {
   if (!AudioContextConstructor) {
-    return null;
+    return Promise.resolve(null);
   }
 
   if (!audioContext) {
     audioContext = new AudioContextConstructor();
   }
 
-  if (audioContext.state === "suspended") {
-    audioContext.resume().catch(() => {});
+  if (audioContext.state === "running") {
+    return Promise.resolve(audioContext);
   }
 
-  return audioContext;
+  if (!audioUnlockPromise) {
+    audioUnlockPromise = audioContext
+      .resume()
+      .catch(() => null)
+      .finally(() => {
+        audioUnlockPromise = null;
+      });
+  }
+
+  return audioUnlockPromise.then(() => audioContext);
 }
 
 function scheduleTone(context, tone) {
@@ -321,41 +331,50 @@ function scheduleTone(context, tone) {
 }
 
 function playSound(effectName) {
-  if (!audioContext || audioContext.state !== "running") {
+  if (!audioContext) {
+    return;
+  }
+
+  if (audioContext.state !== "running") {
+    unlockAudio().then((readyContext) => {
+      if (readyContext && readyContext.state === "running") {
+        playSound(effectName);
+      }
+    });
     return;
   }
 
   switch (effectName) {
     case "button":
-      scheduleTone(audioContext, { frequency: 440, endFrequency: 540, duration: 0.05, type: "square", volume: 0.012 });
+      scheduleTone(audioContext, { frequency: 440, endFrequency: 540, duration: 0.06, type: "square", volume: 0.04 });
       break;
     case "cherry":
-      scheduleTone(audioContext, { frequency: 720, endFrequency: 810, duration: 0.045, volume: 0.016 });
-      scheduleTone(audioContext, { at: 0.03, frequency: 860, endFrequency: 940, duration: 0.04, volume: 0.014 });
+      scheduleTone(audioContext, { frequency: 720, endFrequency: 840, duration: 0.06, volume: 0.055 });
+      scheduleTone(audioContext, { at: 0.035, frequency: 880, endFrequency: 980, duration: 0.05, volume: 0.045 });
       break;
     case "power":
-      scheduleTone(audioContext, { frequency: 360, endFrequency: 520, duration: 0.09, type: "sawtooth", volume: 0.016 });
-      scheduleTone(audioContext, { at: 0.07, frequency: 640, endFrequency: 860, duration: 0.13, volume: 0.02 });
+      scheduleTone(audioContext, { frequency: 360, endFrequency: 540, duration: 0.12, type: "sawtooth", volume: 0.05 });
+      scheduleTone(audioContext, { at: 0.08, frequency: 660, endFrequency: 920, duration: 0.16, volume: 0.065 });
       break;
     case "enemy":
-      scheduleTone(audioContext, { frequency: 360, duration: 0.05, type: "square", volume: 0.018 });
-      scheduleTone(audioContext, { at: 0.05, frequency: 520, duration: 0.05, type: "square", volume: 0.018 });
-      scheduleTone(audioContext, { at: 0.1, frequency: 760, duration: 0.09, type: "square", volume: 0.018 });
+      scheduleTone(audioContext, { frequency: 360, duration: 0.06, type: "square", volume: 0.055 });
+      scheduleTone(audioContext, { at: 0.055, frequency: 520, duration: 0.06, type: "square", volume: 0.055 });
+      scheduleTone(audioContext, { at: 0.11, frequency: 760, duration: 0.1, type: "square", volume: 0.055 });
       break;
     case "level-clear":
-      scheduleTone(audioContext, { frequency: 520, duration: 0.08, volume: 0.018 });
-      scheduleTone(audioContext, { at: 0.08, frequency: 660, duration: 0.08, volume: 0.018 });
-      scheduleTone(audioContext, { at: 0.16, frequency: 880, duration: 0.14, volume: 0.02 });
+      scheduleTone(audioContext, { frequency: 520, duration: 0.1, volume: 0.05 });
+      scheduleTone(audioContext, { at: 0.09, frequency: 660, duration: 0.1, volume: 0.05 });
+      scheduleTone(audioContext, { at: 0.18, frequency: 880, duration: 0.16, volume: 0.06 });
       break;
     case "lose":
-      scheduleTone(audioContext, { frequency: 420, endFrequency: 300, duration: 0.12, type: "sawtooth", volume: 0.018 });
-      scheduleTone(audioContext, { at: 0.1, frequency: 260, endFrequency: 160, duration: 0.18, type: "sawtooth", volume: 0.018 });
+      scheduleTone(audioContext, { frequency: 420, endFrequency: 300, duration: 0.14, type: "sawtooth", volume: 0.055 });
+      scheduleTone(audioContext, { at: 0.11, frequency: 260, endFrequency: 160, duration: 0.2, type: "sawtooth", volume: 0.055 });
       break;
     case "win":
-      scheduleTone(audioContext, { frequency: 520, duration: 0.08, volume: 0.018 });
-      scheduleTone(audioContext, { at: 0.08, frequency: 660, duration: 0.08, volume: 0.018 });
-      scheduleTone(audioContext, { at: 0.16, frequency: 820, duration: 0.1, volume: 0.018 });
-      scheduleTone(audioContext, { at: 0.26, frequency: 1040, duration: 0.18, volume: 0.022 });
+      scheduleTone(audioContext, { frequency: 520, duration: 0.1, volume: 0.05 });
+      scheduleTone(audioContext, { at: 0.09, frequency: 660, duration: 0.1, volume: 0.05 });
+      scheduleTone(audioContext, { at: 0.18, frequency: 820, duration: 0.12, volume: 0.05 });
+      scheduleTone(audioContext, { at: 0.3, frequency: 1040, duration: 0.2, volume: 0.065 });
       break;
     default:
       break;
@@ -1392,6 +1411,14 @@ function frame(timestamp) {
   drawScene();
   window.requestAnimationFrame(frame);
 }
+
+function handleFirstInteractionUnlock() {
+  unlockAudio();
+}
+
+window.addEventListener("pointerdown", handleFirstInteractionUnlock, { passive: true });
+window.addEventListener("touchstart", handleFirstInteractionUnlock, { passive: true });
+window.addEventListener("mousedown", handleFirstInteractionUnlock, { passive: true });
 
 document.addEventListener("keydown", (event) => {
   const isTypingField =
