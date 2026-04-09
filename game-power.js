@@ -27,7 +27,6 @@ const ENEMY_EAT_POINTS = 200;
 const ENEMY_STUN_DURATION = 0.9;
 const LEADERBOARD_KEY = "cherry-chase-leaderboard-v1";
 const PLAYER_NAME_KEY = "cherry-chase-player-name";
-const MAX_LEADERBOARD_ENTRIES = 10;
 const MAX_NAME_LENGTH = 10;
 const APP_CONFIG = window.CHERRY_CHASE_CONFIG || {};
 const SCOREBOARD_CONFIG = APP_CONFIG.scoreboard || {};
@@ -449,7 +448,7 @@ function normalizeLeaderboardEntries(entries) {
         result: entry.result || "Played",
         createdAt: entry.createdAt || Date.parse(entry.created_at || "") || Date.now()
       }))
-  ).slice(0, MAX_LEADERBOARD_ENTRIES);
+  );
 }
 
 function loadLocalLeaderboard() {
@@ -480,7 +479,7 @@ function createSupabaseHeaders() {
 
 async function fetchRemoteLeaderboard() {
   const response = await fetch(
-    `${SCOREBOARD_CONFIG.url}/rest/v1/${SCOREBOARD_TABLE}?select=name,score,level,result,created_at&limit=50`,
+    `${SCOREBOARD_CONFIG.url}/rest/v1/${SCOREBOARD_TABLE}?select=name,score,level,result,created_at`,
     {
       headers: createSupabaseHeaders()
     }

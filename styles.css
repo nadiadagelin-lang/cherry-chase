@@ -276,6 +276,9 @@ body.touch-mode .touch-controls {
   list-style: none;
   display: grid;
   gap: 0.55rem;
+  max-height: 28rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
 }
 
 .leaderboard-entry {
