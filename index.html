@@ -11,7 +11,7 @@
     <header class="title-block">
       <p class="eyebrow">Mini Arcade</p>
       <h1>Cherry Chase</h1>
-      <p class="subtitle">Battle through six harder mazes, grab the big cherries, and climb the leaderboard.</p>
+      <p class="subtitle">Battle through seven harder mazes, grab the big cherries, and climb the leaderboard.</p>
     </header>
 
     <section class="game-shell" aria-label="Cherry Chase game">
@@ -22,7 +22,7 @@
         </div>
         <div class="hud-card">
           <span class="hud-label">Level</span>
-          <strong id="level">1 / 6</strong>
+          <strong id="level">1 / 7</strong>
           <span id="level-name">Velvet Hall</span>
         </div>
         <div class="hud-card">
@@ -42,10 +42,11 @@
         <canvas id="game" width="608" height="480" aria-label="Cherry Chase playfield"></canvas>
         <div class="overlay" id="overlay" aria-live="polite">
           <div class="overlay-panel">
-            <p class="overlay-kicker" id="overlay-kicker">6-Level Run</p>
+            <p class="overlay-kicker" id="overlay-kicker">7-Level Run</p>
             <h2 id="overlay-title">Cherry Chase</h2>
             <p id="overlay-message">Collect every cherry, grab the big ones, hunt both chasers, and chase the highest score.</p>
-            <p class="overlay-hint">Press Enter or Space to begin</p>
+            <button class="overlay-action" id="overlay-action" type="button">Start Run</button>
+            <p class="overlay-hint">Press Enter or Space to begin, or tap the button below.</p>
           </div>
         </div>
       </div>
@@ -69,9 +70,13 @@
         <div class="leaderboard-header">
           <div>
             <span class="hud-label">Leaderboard</span>
-            <strong>All Cherry Hunters</strong>
+            <strong>Hall of Cherries</strong>
+            <p class="leaderboard-copy">Every player stays on the board. The top three runs earn medals.</p>
           </div>
-          <span class="leaderboard-note" id="leaderboard-note">Local mode</span>
+          <div class="leaderboard-status">
+            <span class="leaderboard-count" id="leaderboard-count">0 runs saved</span>
+            <span class="leaderboard-note" id="leaderboard-note">Local mode</span>
+          </div>
         </div>
 
         <label class="name-field" for="player-name">

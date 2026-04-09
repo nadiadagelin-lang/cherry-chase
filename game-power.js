@@ -5,6 +5,7 @@ const overlayKicker = document.getElementById("overlay-kicker");
 const overlayTitle = document.getElementById("overlay-title");
 const overlayMessage = document.getElementById("overlay-message");
 const overlayHint = document.querySelector(".overlay-hint");
+const overlayActionButton = document.getElementById("overlay-action");
 const scoreValue = document.getElementById("score");
 const levelValue = document.getElementById("level");
 const levelNameValue = document.getElementById("level-name");
@@ -14,6 +15,7 @@ const playerNameInput = document.getElementById("player-name");
 const leaderboardList = document.getElementById("leaderboard-list");
 const leaderboardHelp = document.getElementById("leaderboard-help");
 const leaderboardNote = document.getElementById("leaderboard-note");
+const leaderboardCount = document.getElementById("leaderboard-count");
 const touchControls = document.getElementById("touch-controls");
 const touchActionButton = document.getElementById("touch-action");
 const touchMoveButtons = Array.from(document.querySelectorAll(".touch-button[data-direction]"));
@@ -38,6 +40,21 @@ const SHARED_SCOREBOARD_ENABLED =
   SCOREBOARD_CONFIG.anonKey.trim();
 const SCOREBOARD_TABLE = SCOREBOARD_CONFIG.table || "cherry_chase_scores";
 const coarsePointerQuery = window.matchMedia("(pointer: coarse)");
+const leaderboardDateFormatter = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+
+const TOUCH_BUTTON_LABELS = {
+  up: "^",
+  left: "<",
+  right: ">",
+  down: "v"
+};
+
+const MEDAL_TIERS = [
+  { className: "gold", label: "Gold Medal" },
+  { className: "silver", label: "Silver Medal" },
+  { className: "bronze", label: "Bronze Medal" }
+];
 
 const LEVELS = [
   {
@@ -165,6 +182,27 @@ const LEVELS = [
       "#..F..O......E....#",
       "###################"
     ]
+  },
+  {
+    name: "Cherry Throne",
+    enemySpeed: 228,
+    map: [
+      "###################",
+      "#P..O....#....O...#",
+      "#.###.##.#.##.###.#",
+      "#...#....#....#...#",
+      "###.#.#######.#.#.#",
+      "#...#...#.....#.#.#",
+      "#.#####.#.#####.#.#",
+      "#.#O..#.#...#..O#.#",
+      "#.#.#.#.###.#.###.#",
+      "#...#.#...#.#.....#",
+      "###.#.###.#.#####.#",
+      "#..O#..O..#..O..#.#",
+      "#.#####.#######.#.#",
+      "#..F..O......E....#",
+      "###################"
+    ]
   }
 ];
 
@@ -239,6 +277,117 @@ const game = {
   lastTimestamp: 0,
   animationTime: 0
 };
+
+let audioContext = null;
+
+function unlockAudio() {
+  if (!AudioContextConstructor) {
+    return null;
+  }
+
+  if (!audioContext) {
+    audioContext = new AudioContextConstructor();
+  }
+
+  if (audioContext.state === "suspended") {
+    audioContext.resume().catch(() => {});
+  }
+
+  return audioContext;
+}
+
+function scheduleTone(context, tone) {
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  const start = context.currentTime + (tone.at || 0);
+  const duration = tone.duration || 0.08;
+  const endFrequency = tone.endFrequency || tone.frequency;
+
+  oscillator.type = tone.type || "triangle";
+  oscillator.frequency.setValueAtTime(tone.frequency, start);
+
+  if (endFrequency !== tone.frequency) {
+    oscillator.frequency.exponentialRampToValueAtTime(Math.max(1, endFrequency), start + duration);
+  }
+
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(tone.volume || 0.02, start + Math.min(0.02, duration * 0.4));
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start(start);
+  oscillator.stop(start + duration + 0.03);
+}
+
+function playSound(effectName) {
+  if (!audioContext || audioContext.state !== "running") {
+    return;
+  }
+
+  switch (effectName) {
+    case "button":
+      scheduleTone(audioContext, { frequency: 440, endFrequency: 540, duration: 0.05, type: "square", volume: 0.012 });
+      break;
+    case "cherry":
+      scheduleTone(audioContext, { frequency: 720, endFrequency: 810, duration: 0.045, volume: 0.016 });
+      scheduleTone(audioContext, { at: 0.03, frequency: 860, endFrequency: 940, duration: 0.04, volume: 0.014 });
+      break;
+    case "power":
+      scheduleTone(audioContext, { frequency: 360, endFrequency: 520, duration: 0.09, type: "sawtooth", volume: 0.016 });
+      scheduleTone(audioContext, { at: 0.07, frequency: 640, endFrequency: 860, duration: 0.13, volume: 0.02 });
+      break;
+    case "enemy":
+      scheduleTone(audioContext, { frequency: 360, duration: 0.05, type: "square", volume: 0.018 });
+      scheduleTone(audioContext, { at: 0.05, frequency: 520, duration: 0.05, type: "square", volume: 0.018 });
+      scheduleTone(audioContext, { at: 0.1, frequency: 760, duration: 0.09, type: "square", volume: 0.018 });
+      break;
+    case "level-clear":
+      scheduleTone(audioContext, { frequency: 520, duration: 0.08, volume: 0.018 });
+      scheduleTone(audioContext, { at: 0.08, frequency: 660, duration: 0.08, volume: 0.018 });
+      scheduleTone(audioContext, { at: 0.16, frequency: 880, duration: 0.14, volume: 0.02 });
+      break;
+    case "lose":
+      scheduleTone(audioContext, { frequency: 420, endFrequency: 300, duration: 0.12, type: "sawtooth", volume: 0.018 });
+      scheduleTone(audioContext, { at: 0.1, frequency: 260, endFrequency: 160, duration: 0.18, type: "sawtooth", volume: 0.018 });
+      break;
+    case "win":
+      scheduleTone(audioContext, { frequency: 520, duration: 0.08, volume: 0.018 });
+      scheduleTone(audioContext, { at: 0.08, frequency: 660, duration: 0.08, volume: 0.018 });
+      scheduleTone(audioContext, { at: 0.16, frequency: 820, duration: 0.1, volume: 0.018 });
+      scheduleTone(audioContext, { at: 0.26, frequency: 1040, duration: 0.18, volume: 0.022 });
+      break;
+    default:
+      break;
+  }
+}
+
+function syncTouchButtonLabels() {
+  touchMoveButtons.forEach((button) => {
+    const label = TOUCH_BUTTON_LABELS[button.dataset.direction];
+    if (label) {
+      button.textContent = label;
+    }
+  });
+}
+
+function formatLeaderboardDate(timestamp) {
+  const parsed = Number(timestamp);
+
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return "today";
+  }
+
+  try {
+    return leaderboardDateFormatter.format(new Date(parsed));
+  } catch {
+    return "today";
+  }
+}
+
+function getMedalTier(index) {
+  return MEDAL_TIERS[index] || null;
+}
 
 function parseMap(layout) {
   const cherries = new Set();
@@ -355,7 +504,7 @@ function hideOverlay() {
 }
 
 function updateLeaderboardModeUi() {
-  leaderboardNote.textContent = SHARED_SCOREBOARD_ENABLED ? "Shared online" : "Local until configured";
+  leaderboardNote.textContent = SHARED_SCOREBOARD_ENABLED ? "Shared online for everyone" : "Local until configured";
 }
 
 function isTouchMode() {
@@ -369,21 +518,29 @@ function updateTouchModeUi() {
 }
 
 function updateTouchActionButton() {
+  let touchLabel = "Start";
+  let overlayLabel = "Start Run";
+
   if (game.state === "playing") {
     touchActionButton.textContent = "Play";
     touchActionButton.disabled = true;
+    overlayActionButton.textContent = "Playing Now";
+    overlayActionButton.disabled = true;
     return;
   }
 
-  touchActionButton.disabled = false;
-
   if (game.state === "level-clear") {
-    touchActionButton.textContent = "Next";
+    touchLabel = "Next";
+    overlayLabel = "Next Maze";
   } else if (game.state === "lost" || game.state === "finished") {
-    touchActionButton.textContent = "Restart";
-  } else {
-    touchActionButton.textContent = "Start";
+    touchLabel = "Restart";
+    overlayLabel = "Restart Run";
   }
+
+  touchActionButton.textContent = touchLabel;
+  touchActionButton.disabled = false;
+  overlayActionButton.textContent = overlayLabel;
+  overlayActionButton.disabled = false;
 }
 
 function queueDirectionByName(directionName) {
@@ -396,6 +553,8 @@ function queueDirectionByName(directionName) {
 }
 
 function advanceGameState() {
+  unlockAudio();
+
   if (game.state === "start" || game.state === "lost" || game.state === "finished") {
     startNewGame();
     return true;
@@ -528,6 +687,7 @@ async function loadLeaderboard() {
 
 function renderLeaderboard(entries) {
   leaderboardList.innerHTML = "";
+  leaderboardCount.textContent = `${entries.length} ${entries.length === 1 ? "run" : "runs"} saved`;
 
   if (entries.length === 0) {
     const empty = document.createElement("li");
@@ -540,25 +700,60 @@ function renderLeaderboard(entries) {
   entries.forEach((entry, index) => {
     const item = document.createElement("li");
     item.className = "leaderboard-entry";
+    const medalTier = getMedalTier(index);
+
+    if (medalTier) {
+      item.classList.add("leaderboard-entry--top", `leaderboard-entry--${medalTier.className}`);
+    }
 
     const rank = document.createElement("span");
     rank.className = "leaderboard-rank";
-    rank.textContent = String(index + 1);
+    rank.textContent = `#${index + 1}`;
+
+    if (medalTier) {
+      rank.classList.add(`leaderboard-rank--${medalTier.className}`);
+    }
 
     const identity = document.createElement("div");
+    identity.className = "leaderboard-identity";
+
     const name = document.createElement("span");
     name.className = "leaderboard-name";
     name.textContent = entry.name;
+
+    const detailRow = document.createElement("div");
+    detailRow.className = "leaderboard-detail-row";
+
+    if (medalTier) {
+      const medal = document.createElement("span");
+      medal.className = `leaderboard-medal leaderboard-medal--${medalTier.className}`;
+      medal.textContent = medalTier.label;
+      detailRow.append(medal);
+    }
+
+    const result = document.createElement("span");
+    result.className = "leaderboard-result";
+    result.textContent = `${entry.result} - Level ${entry.level}`;
+    detailRow.append(result);
+
     const meta = document.createElement("span");
     meta.className = "leaderboard-meta";
-    meta.textContent = `${entry.result} - Level ${entry.level}`;
-    identity.append(name, meta);
+    meta.textContent = `Saved ${formatLeaderboardDate(entry.createdAt)}`;
+    identity.append(name, detailRow, meta);
+
+    const scorePanel = document.createElement("div");
+    scorePanel.className = "leaderboard-score-panel";
+
+    const scoreLabel = document.createElement("span");
+    scoreLabel.className = "leaderboard-score-label";
+    scoreLabel.textContent = "score";
 
     const score = document.createElement("span");
     score.className = "leaderboard-score";
     score.textContent = `${entry.score}`;
+    scorePanel.append(scoreLabel, score);
 
-    item.append(rank, identity, score);
+    item.append(rank, identity, scorePanel);
     leaderboardList.append(item);
   });
 }
@@ -595,13 +790,13 @@ function requirePlayerName() {
     "Name Required",
     "Add Your Name",
     "Type your name in the leaderboard panel before you start a run.",
-    "Then press Enter or Space to begin"
+    "Then press Start Run, Enter, or Space to begin"
   );
   return false;
 }
 
 async function recordScore(result) {
-  if (game.scoreSaved || game.score <= 0) {
+  if (game.scoreSaved) {
     return;
   }
 
@@ -700,34 +895,40 @@ function startNextLevel() {
 function clearLevel() {
   if (game.levelIndex === LEVELS.length - 1) {
     game.state = "finished";
+    playSound("win");
     recordScore("Cleared All");
     showOverlay(
       "Cherry Crown",
       "All Mazes Cleared",
       `You beat both chasers through all ${LEVELS.length} mazes and scored ${game.score}.`,
-      "Press Enter or Space to play again from Level 1"
+      "Press Enter, Space, or Restart Run to play again from Level 1"
     );
     return;
   }
 
   const nextLevel = LEVELS[game.levelIndex + 1];
+  const nextMazeLabel =
+    game.levelIndex + 1 === LEVELS.length - 1 ? `the boss maze ${nextLevel.name}` : nextLevel.name;
+
   game.state = "level-clear";
+  playSound("level-clear");
   showOverlay(
     `Level ${game.levelIndex + 1} Clear`,
     `${game.level.name} Complete`,
-    `Score: ${game.score}. Two chasers are waiting in ${nextLevel.name}.`,
-    "Press Enter or Space for the next maze"
+    `Score: ${game.score}. Two chasers are waiting inside ${nextMazeLabel}.`,
+    "Press Enter, Space, or Next Maze for the next run"
   );
 }
 
 function loseRound() {
   game.state = "lost";
+  playSound("lose");
   recordScore("Caught");
   showOverlay(
     `Caught On Level ${game.levelIndex + 1}`,
     "The Chasers Won",
     `${game.level.name} closed in on you. Use the big cherries to turn the hunt around. Score: ${game.score}.`,
-    "Press Enter or Space to restart from Level 1"
+    "Press Enter, Space, or Restart Run to restart from Level 1"
   );
 }
 
@@ -833,6 +1034,7 @@ function activatePowerMode() {
   game.powerModeRemaining = POWER_DURATION;
   game.enemyCombo = 0;
   updatePowerHud();
+  playSound("power");
 }
 
 function eatEnemy(enemy) {
@@ -840,6 +1042,7 @@ function eatEnemy(enemy) {
   game.enemyCombo += 1;
   game.score += bonus;
   updateScore();
+  playSound("enemy");
 
   enemy.row = enemy.spawn.row;
   enemy.col = enemy.spawn.col;
@@ -855,16 +1058,19 @@ function eatEnemy(enemy) {
 function collectAtPlayer() {
   const key = tileKey(game.player.row, game.player.col);
   let changed = false;
+  let soundName = "";
 
   if (game.powerCherries.has(key)) {
     game.powerCherries.delete(key);
     game.score += POWER_CHERRY_POINTS;
     activatePowerMode();
     changed = true;
+    soundName = "power";
   } else if (game.cherries.has(key)) {
     game.cherries.delete(key);
     game.score += SMALL_CHERRY_POINTS;
     changed = true;
+    soundName = "cherry";
   }
 
   if (!changed) {
@@ -873,6 +1079,10 @@ function collectAtPlayer() {
 
   updateScore();
   updatePowerHud();
+
+  if (soundName === "cherry") {
+    playSound("cherry");
+  }
 
   if (remainingCollectibles() === 0) {
     clearLevel();
@@ -1197,6 +1407,8 @@ document.addEventListener("keydown", (event) => {
       (game.state === "start" || game.state === "lost" || game.state === "finished")
     ) {
       event.preventDefault();
+      unlockAudio();
+      playSound("button");
       startNewGame();
     }
     return;
@@ -1207,6 +1419,10 @@ document.addEventListener("keydown", (event) => {
   }
 
   if (event.key === " " || event.key === "Enter") {
+    unlockAudio();
+    if (game.state !== "playing") {
+      playSound("button");
+    }
     advanceGameState();
     return;
   }
@@ -1216,16 +1432,28 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
+  unlockAudio();
   queueDirectionByName(direction.name);
 });
 
-overlay.addEventListener("click", () => {
-  if (game.state !== "playing") {
+overlay.addEventListener("click", (event) => {
+  if (event.target === overlay && game.state !== "playing") {
+    unlockAudio();
+    playSound("button");
     advanceGameState();
   }
 });
 
+overlayActionButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+  unlockAudio();
+  playSound("button");
+  advanceGameState();
+});
+
 touchActionButton.addEventListener("click", () => {
+  unlockAudio();
+  playSound("button");
   advanceGameState();
 });
 
@@ -1246,6 +1474,7 @@ playerNameInput.addEventListener("input", () => {
 });
 
 restorePlayerName();
+syncTouchButtonLabels();
 updateLeaderboardModeUi();
 updateTouchModeUi();
 updateTouchActionButton();
@@ -1260,10 +1489,10 @@ if (getPlayerName()) {
 
 applyLevel(0, true);
 showOverlay(
-  "6-Level Run",
+  "7-Level Run",
   "Cherry Chase",
-  "Enter your name, eat the big cherries, and push through all six mazes for the top score.",
-  "Press Enter or Space to begin"
+  "Enter your name, eat the big cherries, survive seven mazes, and conquer the boss run for the top score.",
+  "Press Enter, Space, or Start Run to begin"
 );
 coarsePointerQuery.addEventListener?.("change", updateTouchModeUi);
 window.requestAnimationFrame(frame);
